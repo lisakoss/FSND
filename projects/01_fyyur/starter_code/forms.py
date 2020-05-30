@@ -2,13 +2,17 @@ from datetime import datetime
 from flask_wtf import Form
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField
 from wtforms.validators import DataRequired, AnyOf, URL
+from flask_wtf.html5 import URLField
+import phonenumbers
 
 class ShowForm(Form):
     artist_id = StringField(
-        'artist_id'
+        'artist_id',
+        validators=[DataRequired()]
     )
     venue_id = StringField(
-        'venue_id'
+        'venue_id',
+        validators=[DataRequired()]
     )
     start_time = DateTimeField(
         'start_time',
@@ -83,13 +87,15 @@ class VenueForm(Form):
         'address', validators=[DataRequired()]
     )
     phone = StringField(
-        'phone'
+        'phone', validators=[DataRequired()]
     )
-    image_link = StringField(
-        'image_link'
+    image_link = URLField(
+        'image_link', validators=[URL()]
+    )
+    website_link = URLField(
+        'website_link', validators=[URL()]
     )
     genres = SelectMultipleField(
-        # TODO implement enum restriction
         'genres', validators=[DataRequired()],
         choices=[
             ('Alternative', 'Alternative'),
@@ -113,8 +119,14 @@ class VenueForm(Form):
             ('Other', 'Other'),
         ]
     )
-    facebook_link = StringField(
+    facebook_link = URLField(
         'facebook_link', validators=[URL()]
+    )
+    talent_wanted = SelectField(
+        'talent_wanted', validators=[DataRequired()], choices = [('Yes', 'Yes'), ('No', 'No')]
+    )
+    talent_desc = StringField(
+        'talent_desc'
     )
 
 class ArtistForm(Form):
@@ -184,11 +196,13 @@ class ArtistForm(Form):
         # TODO implement validation logic for state
         'phone'
     )
-    image_link = StringField(
-        'image_link'
+    image_link = URLField(
+        'image_link', validators=[URL()]
+    )
+    website_link = URLField(
+        'website_link', validators=[URL()]
     )
     genres = SelectMultipleField(
-        # TODO implement enum restriction
         'genres', validators=[DataRequired()],
         choices=[
             ('Alternative', 'Alternative'),
@@ -212,9 +226,12 @@ class ArtistForm(Form):
             ('Other', 'Other'),
         ]
     )
-    facebook_link = StringField(
-        # TODO implement enum restriction
+    facebook_link = URLField(
         'facebook_link', validators=[URL()]
     )
-
-# TODO IMPLEMENT NEW ARTIST FORM AND NEW SHOW FORM
+    seeking_venue = SelectField(
+        'seeking_venue', validators=[DataRequired()], choices = [('Yes', 'Yes'), ('No', 'No')]
+    )
+    seeking_desc = StringField(
+        'seeking_desc'
+    )
