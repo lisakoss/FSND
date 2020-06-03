@@ -8,6 +8,15 @@ from models import setup_db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
 
+def paginate_questions(request, selection):
+  page = request.args.get('page', 1, type=int)
+  start = (page - 1) * 10
+  end = start + 10
+
+  formatted_questions = [question.format() for question in selection]
+
+  return formatted_questions[start:end]
+
 def create_app(test_config=None):
   # create and configure the app
   app = Flask(__name__)
@@ -32,31 +41,41 @@ def create_app(test_config=None):
 
   @app.route('/api/questions')
   def get_questions():
-    page = request.args.get('page', 1, type=int)
-    start = (page - 1) * 10
-    end = start + 10
-
     questions = Question.query.all()
-    formatted_questions = [question.format() for question in questions]
+    formatted_questions = paginate_questions(request, questions)
 
     categories = Category.query.all()
     formatted_categories = [category.format() for category in categories]
 
     return jsonify({
       'success': True,
-      'questions': formatted_questions[start:end],
-      'total_questions': len(formatted_questions),
+      'questions': formatted_questions,
+      'total_questions': len(questions),
       'current_category': 'none',
       'categories': formatted_categories
     })
 
-  '''
-  @TODO: 
-  Create an endpoint to DELETE question using a question ID. 
+  @app.route('/api/questions/<int:question_id>', methods=['DELETE'])
+  def delete_question(question_id):
+    try:
+      question = Question.query.filter_by(id=question_id).one_or_none()
 
-  TEST: When you click the trash icon next to a question, the question will be removed.
-  This removal will persist in the database and when you refresh the page. 
-  '''
+      if question is None:
+        abort(404)
+
+      question.delete()
+      questions = Question.query.order_by(Question.id).all()
+      formatted_questions = paginate_questions(request, questions)
+
+      return jsonify({
+        'success': True,
+        'deleted': question_id,
+        'questions': formatted_questions,
+        'total_questions': len(Question.query.all())
+      })
+
+    except:
+      abort(422)
 
   '''
   @TODO: 
