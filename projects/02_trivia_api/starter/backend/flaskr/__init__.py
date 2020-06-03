@@ -77,48 +77,55 @@ def create_app(test_config=None):
     except:
       abort(422)
 
-  '''
-  @TODO: 
-  Create an endpoint to POST a new question, 
-  which will require the question and answer text, 
-  category, and difficulty score.
-
-  TEST: When you submit a question on the "Add" tab, 
-  the form will clear and the question will appear at the end of the last page
-  of the questions list in the "List" tab.  
-  '''
-
   @app.route('/api/questions', methods=['POST'])
   def create_question():
     body = request.get_json()
 
-    question = body.get('question')
-    answer = body.get('answer')
-    difficulty = body.get('difficulty')
-    category = body.get('category')
+    # check if request is for a search or for the creation of new question
+    if body.get('searchTerm') != None:
+      search_term = body.get('searchTerm')
 
-    # all fields are required to submit a new question
-    if ((question == '') or (answer == '') 
-        or (difficulty == '') or (category == '')):
-      abort(422)
+      try:
+        questions = Question.query.filter(Question.question.ilike(f'%{search_term}%')).all()
+        formatted_questions = paginate_questions(request, questions)
 
-    try:
-      question = Question(question=question, answer=answer, 
-                          difficulty=difficulty, category=category)
-      question.insert()
+        return jsonify({
+          'success': True,
+          'questions': formatted_questions,
+          'total_questions': len(questions) # only want pagination for search results
+        })
 
-      questions = Question.query.order_by(Question.id).all()
-      formatted_questions = paginate_questions(request, questions)
+      except:
+        abort(422)
 
-      return jsonify({
-        'success': True,
-        'created': question.id,
-        'questions': formatted_questions,
-        'total_questions': len(Question.query.all())
-      })
+    else:
+      question = body.get('question')
+      answer = body.get('answer')
+      difficulty = body.get('difficulty')
+      category = body.get('category')
 
-    except:
-      abort(422)
+      # all fields are required to submit a new question
+      if ((question == '') or (answer == '') 
+          or (difficulty == '') or (category == '')):
+        abort(422)
+
+      try:
+        question = Question(question=question, answer=answer, 
+                            difficulty=difficulty, category=category)
+        question.insert()
+
+        questions = Question.query.order_by(Question.id).all()
+        formatted_questions = paginate_questions(request, questions)
+
+        return jsonify({
+          'success': True,
+          'created': question.id,
+          'questions': formatted_questions,
+          'total_questions': len(Question.query.all())
+        })
+
+      except:
+        abort(422)
 
   '''
   @TODO: 
