@@ -17,6 +17,17 @@ def paginate_questions(request, selection):
 
   return formatted_questions[start:end]
 
+def get_random_question(category_questions, total_questions):
+  return category_questions[random.randint(0, total_questions - 1)]
+
+def check_question(random_question, previous_questions):
+  used = False
+  for question_id in previous_questions:
+    if question_id == random_question.id:
+      used = True
+    
+  return used
+
 def create_app(test_config=None):
   # create and configure the app
   app = Flask(__name__)
@@ -140,17 +151,34 @@ def create_app(test_config=None):
       'total_questions': len(Question.query.all())
     })
 
-  '''
-  @TODO: 
-  Create a POST endpoint to get questions to play the quiz. 
-  This endpoint should take category and previous question parameters 
-  and return a random questions within the given category, 
-  if provided, and that is not one of the previous questions. 
+  @app.route('/api/quizzes', methods=['POST'])
+  def get_quiz_questions():
+    body = request.get_json()
+    previous_questions = body.get('previous_questions')
+    quiz_category = body.get('quiz_category')
 
-  TEST: In the "Play" tab, after a user selects "All" or a category,
-  one question at a time is displayed, the user is allowed to answer
-  and shown whether they were correct or not. 
-  '''
+    if quiz_category["type"] != "click":
+      category_questions = Question.query.filter_by(category=str(int(quiz_category['id']) + 1)).all()
+    else:
+      category_questions = Question.query.all()
+
+    total_questions = len(category_questions)
+
+    # return if all questions have been answered 
+    if total_questions == len(previous_questions):
+      return jsonify({
+        'success': True
+      })
+
+    random_question = get_random_question(category_questions, len(category_questions))
+
+    while (check_question(random_question, previous_questions)):
+      random_question = get_random_question(category_questions, len(category_questions))
+
+    return jsonify({
+      'success': True,
+      'question': random_question.format()
+    })
 
   '''
   @TODO: 
