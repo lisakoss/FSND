@@ -8,6 +8,7 @@ from models import setup_db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
 
+# determines which questions to show based on page number
 def paginate_questions(request, selection):
   page = request.args.get('page', 1, type=int)
   start = (page - 1) * 10
@@ -17,9 +18,11 @@ def paginate_questions(request, selection):
 
   return formatted_questions[start:end]
 
+# return a random question from the given questions
 def get_random_question(category_questions, total_questions):
   return category_questions[random.randint(0, total_questions - 1)]
 
+# check if question has already been answered by the user
 def check_question(random_question, previous_questions):
   used = False
   for question_id in previous_questions:
@@ -37,19 +40,25 @@ def create_app(test_config=None):
   @app.after_request
   def after_request(response):
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
     return response 
 
+  # handles GET requests for all categories
   @app.route('/api/categories')
   def get_categories():
     categories = Category.query.all()
     formatted_categories = [category.format() for category in categories]
+
+    # abort if no categories found
+    if len(formatted_categories) == 0:
+      abort(404)
 
     return jsonify({
       'success': True,
       'categories': formatted_categories
     })
 
+  # handles GET requests for all questions
   @app.route('/api/questions')
   def get_questions():
     questions = Question.query.all()
@@ -57,6 +66,10 @@ def create_app(test_config=None):
 
     categories = Category.query.all()
     formatted_categories = [category.format() for category in categories]
+
+    # abort if no questions found
+    if len(formatted_questions) == 0:
+      abort(404)
 
     return jsonify({
       'success': True,
@@ -66,11 +79,13 @@ def create_app(test_config=None):
       'categories': formatted_categories
     })
 
+  # handles DELETE request for given question ID
   @app.route('/api/questions/<int:question_id>', methods=['DELETE'])
   def delete_question(question_id):
     try:
       question = Question.query.filter_by(id=question_id).one_or_none()
 
+      # abort if question does not exist
       if question is None:
         abort(404)
 
@@ -88,6 +103,7 @@ def create_app(test_config=None):
     except:
       abort(422)
 
+  # handle POST requestions for new questions & search terms
   @app.route('/api/questions', methods=['POST'])
   def create_question():
     body = request.get_json()
@@ -115,10 +131,10 @@ def create_app(test_config=None):
       difficulty = body.get('difficulty')
       category = body.get('category')
 
-      # all fields are required to submit a new question
+      # all fields are required to submit a new question, abort otherwise
       if ((question == '') or (answer == '') 
           or (difficulty == '') or (category == '')):
-        abort(422)
+        abort(400)
 
       try:
         question = Question(question=question, answer=answer, 
@@ -138,9 +154,15 @@ def create_app(test_config=None):
       except:
         abort(422)
 
+  # handles GET request for questions in a given category
   @app.route('/api/categories/<int:category_id>/questions')
   def get_questions_by_category(category_id):
-    category = Category.query.filter_by(id=category_id).first()
+    category = Category.query.filter_by(id=category_id).one_or_none()
+
+    # abort if question does not exist
+    if category is None:
+      abort(404)
+
     questions = Question.query.filter_by(category=category_id).all()
     formatted_questions = paginate_questions(request, questions)
 
@@ -151,12 +173,18 @@ def create_app(test_config=None):
       'total_questions': len(Question.query.all())
     })
 
+  # handles POST requests for taking a new quiz
   @app.route('/api/quizzes', methods=['POST'])
   def get_quiz_questions():
     body = request.get_json()
     previous_questions = body.get('previous_questions')
     quiz_category = body.get('quiz_category')
 
+    # abort if category or previous questions is not found
+    if (quiz_category is None) or (previous_questions is None):
+      abort(400)
+
+    # determine if the user wants to take a quiz with questions from all categories
     if quiz_category["type"] != "click":
       category_questions = Question.query.filter_by(category=str(int(quiz_category['id']) + 1)).all()
     else:
@@ -172,6 +200,7 @@ def create_app(test_config=None):
 
     random_question = get_random_question(category_questions, len(category_questions))
 
+    # continue generating a random question until a new one is found
     while (check_question(random_question, previous_questions)):
       random_question = get_random_question(category_questions, len(category_questions))
 
@@ -180,12 +209,29 @@ def create_app(test_config=None):
       'question': random_question.format()
     })
 
-  '''
-  @TODO: 
-  Create error handlers for all expected errors 
-  including 404 and 422. 
-  '''
+  # error handlers for all errors
+  @app.errorhandler(400)
+  def bad_request(error):
+    return jsonify({
+        "success": False, 
+        "error": 400,
+        "message": "Bad request"
+        }), 400
+
+  @app.errorhandler(404)
+  def not_found(error):
+    return jsonify({
+        "success": False, 
+        "error": 404,
+        "message": "Not found"
+        }), 404
+
+  @app.errorhandler(422)
+  def unprocessable(error):
+    return jsonify({
+        "success": False, 
+        "error": 422,
+        "message": "Unprocessable"
+        }), 422
   
   return app
-
-    
