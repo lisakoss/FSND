@@ -87,7 +87,7 @@ def create_app(test_config=None):
 
       # abort if question does not exist
       if question is None:
-        abort(404)
+        abort(422)
 
       question.delete()
       questions = Question.query.order_by(Question.id).all()
@@ -103,7 +103,7 @@ def create_app(test_config=None):
     except:
       abort(422)
 
-  # handle POST requestions for new questions & search terms
+  # handle POST requests for new questions & search terms
   @app.route('/api/questions', methods=['POST'])
   def create_question():
     body = request.get_json()
@@ -114,6 +114,12 @@ def create_app(test_config=None):
 
       try:
         questions = Question.query.filter(Question.question.ilike(f'%{search_term}%')).all()
+       
+        # no search results found
+        if len(questions) == 0:
+          abort(404
+          )
+
         formatted_questions = paginate_questions(request, questions)
 
         return jsonify({
@@ -132,8 +138,8 @@ def create_app(test_config=None):
       category = body.get('category')
 
       # all fields are required to submit a new question, abort otherwise
-      if ((question == '') or (answer == '') 
-          or (difficulty == '') or (category == '')):
+      if ((question is None or question == '') or (answer is None or answer == '') 
+          or (difficulty is None or difficulty == '') or (category is None or category == '')):
         abort(400)
 
       try:
@@ -159,7 +165,7 @@ def create_app(test_config=None):
   def get_questions_by_category(category_id):
     category = Category.query.filter_by(id=category_id).one_or_none()
 
-    # abort if question does not exist
+    # abort if category does not exist
     if category is None:
       abort(404)
 
