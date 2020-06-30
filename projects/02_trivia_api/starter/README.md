@@ -28,11 +28,19 @@ python3 -m venv env
 source env/bin/activate
 ```
 
+This keeps your dependencies for each project separate and organaized. 
+
 ### Backend
 Once you have your virtual environment setup and running, install dependencies by navigating to the `/backend` directory and running:
 
 ```bash
 pip install -r requirements.txt
+```
+
+### Database Setup
+With Postgres running, restore a database using the trivia.psql file provided. From the backend folder in terminal run:
+```bash
+psql trivia < trivia.psql
 ```
 
 ### Running the Server
@@ -45,6 +53,10 @@ export FLASK_APP=flaskr
 export FLASK_ENV=development
 flask run
 ```
+Setting the `FLASK_ENV` variable to `development` will detect file changes and restart the server automatically.
+
+Setting the `FLASK_APP` variable to `flaskr` directs flask to use the `flaskr` directory and the `__init__.py` file to find the application. 
+
 ### Running the Unit Tests
 To run the unit tests, execute (omit the dropdb command if running for the first time):
 

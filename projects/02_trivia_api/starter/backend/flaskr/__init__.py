@@ -11,8 +11,8 @@ QUESTIONS_PER_PAGE = 10
 # determines which questions to show based on page number
 def paginate_questions(request, selection):
   page = request.args.get('page', 1, type=int)
-  start = (page - 1) * 10
-  end = start + 10
+  start = (page - 1) * QUESTIONS_PER_PAGE
+  end = start + QUESTIONS_PER_PAGE
 
   formatted_questions = [question.format() for question in selection]
 
@@ -21,15 +21,6 @@ def paginate_questions(request, selection):
 # return a random question from the given questions
 def get_random_question(category_questions, total_questions):
   return category_questions[random.randint(0, total_questions - 1)]
-
-# check if question has already been answered by the user
-def check_question(random_question, previous_questions):
-  used = False
-  for question_id in previous_questions:
-    if question_id == random_question.id:
-      used = True
-    
-  return used
 
 def create_app(test_config=None):
   # create and configure the app
@@ -61,7 +52,7 @@ def create_app(test_config=None):
   # handles GET requests for all questions
   @app.route('/api/questions')
   def get_questions():
-    questions = Question.query.all()
+    questions = Question.query.order_by(Question.id).all()
     formatted_questions = paginate_questions(request, questions)
 
     categories = Category.query.all()
@@ -74,7 +65,7 @@ def create_app(test_config=None):
     return jsonify({
       'success': True,
       'questions': formatted_questions,
-      'total_questions': len(questions),
+      'total_questions': len(Question.query.all()),
       'current_category': 'none',
       'categories': formatted_categories
     })
@@ -87,7 +78,7 @@ def create_app(test_config=None):
 
       # abort if question does not exist
       if question is None:
-        abort(422)
+        abort(404)
 
       question.delete()
       questions = Question.query.order_by(Question.id).all()
@@ -108,41 +99,31 @@ def create_app(test_config=None):
   def create_question():
     body = request.get_json()
 
-    # check if request is for a search or for the creation of new question
-    if body.get('searchTerm') != None:
-      search_term = body.get('searchTerm')
+    # get response body attributes or set them to None if empty
+    question = body.get('question', None)
+    answer = body.get('answer', None)
+    difficulty = body.get('difficulty', None)
+    category = body.get('category', None)
+    search_term = body.get('searchTerm', None)
 
-      try:
-        questions = Question.query.filter(Question.question.ilike(f'%{search_term}%')).all()
-       
-        # no search results found
-        if len(questions) == 0:
-          abort(404
-          )
-
+    try:
+      # check if request is for a search or for the creation of new question
+      if search_term:
+        questions = Question.query.order_by(Question.id).filter(Question.question.ilike(f'%{search_term}%')).all()
         formatted_questions = paginate_questions(request, questions)
 
         return jsonify({
           'success': True,
           'questions': formatted_questions,
-          'total_questions': len(questions) # only want pagination for search results
+          'total_questions': len(questions)
         })
 
-      except:
-        abort(422)
+      else:
+        # all fields are required to submit a new question
+        if ((question is None) or (answer is None) 
+            or (difficulty is None) or (category is None)):
+          abort(400)
 
-    else:
-      question = body.get('question')
-      answer = body.get('answer')
-      difficulty = body.get('difficulty')
-      category = body.get('category')
-
-      # all fields are required to submit a new question, abort otherwise
-      if ((question is None or question == '') or (answer is None or answer == '') 
-          or (difficulty is None or difficulty == '') or (category is None or category == '')):
-        abort(400)
-
-      try:
         question = Question(question=question, answer=answer, 
                             difficulty=difficulty, category=category)
         question.insert()
@@ -157,8 +138,8 @@ def create_app(test_config=None):
           'total_questions': len(Question.query.all())
         })
 
-      except:
-        abort(422)
+    except: 
+      abort(422)
 
   # handles GET request for questions in a given category
   @app.route('/api/categories/<int:category_id>/questions')
@@ -169,8 +150,12 @@ def create_app(test_config=None):
     if category is None:
       abort(404)
 
-    questions = Question.query.filter_by(category=category_id).all()
+    questions = Question.query.filter_by(category=category_id).order_by(Question.id).all()
     formatted_questions = paginate_questions(request, questions)
+
+    # abort if no questions found
+    if len(questions) == 0:
+      abort(404)
 
     return jsonify({
       'success': True,
@@ -206,8 +191,7 @@ def create_app(test_config=None):
 
     random_question = get_random_question(category_questions, len(category_questions))
 
-    # continue generating a random question until a new one is found
-    while (check_question(random_question, previous_questions)):
+    while random_question.id in previous_questions:
       random_question = get_random_question(category_questions, len(category_questions))
 
     return jsonify({
