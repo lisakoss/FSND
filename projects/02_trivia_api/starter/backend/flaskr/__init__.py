@@ -191,6 +191,7 @@ def create_app(test_config=None):
 
     random_question = get_random_question(category_questions, len(category_questions))
 
+    # keep randomizing until an unanswered question is found
     while random_question.id in previous_questions:
       random_question = get_random_question(category_questions, len(category_questions))
 
