@@ -28,11 +28,19 @@ python3 -m venv env
 source env/bin/activate
 ```
 
+This keeps your dependencies for each project separate and organaized. 
+
 ### Backend
 Once you have your virtual environment setup and running, install dependencies by navigating to the `/backend` directory and running:
 
 ```bash
 pip install -r requirements.txt
+```
+
+### Database Setup
+With Postgres running, restore a database using the trivia.psql file provided. From the backend folder in terminal run:
+```bash
+psql trivia < trivia.psql
 ```
 
 ### Running the Server
@@ -45,6 +53,10 @@ export FLASK_APP=flaskr
 export FLASK_ENV=development
 flask run
 ```
+Setting the `FLASK_ENV` variable to `development` will detect file changes and restart the server automatically.
+
+Setting the `FLASK_APP` variable to `flaskr` directs flask to use the `flaskr` directory and the `__init__.py` file to find the application. 
+
 ### Running the Unit Tests
 To run the unit tests, execute (omit the dropdb command if running for the first time):
 
@@ -57,7 +69,7 @@ python3 test_flaskr.py
 
 ## API Reference
 ### Getting Started
-* Base URL: This backend application can only be ran locally and is hosted at the default, `http://127.0.0.1:5000/`.
+* Base URL: This backend application can only be ran locally and is not hosted at a base URL. The backend is hosted at the default, `http://127.0.0.1:5000/`, which is set in the frontend configuration.
 * Authentication: This version of the application does not require authentication or API keys.
 
 ### Error Handling 
@@ -72,8 +84,8 @@ Errors are returned as JSON objects in the following format:
 ```
 
 The API will return three error types when requests fail:
-* 400 Bad Request
-* 404 Resource Not Found
+* 400 Bad request
+* 404 Resource not found
 * 422 Unprocessable
 
 ### Endpoints
@@ -116,7 +128,7 @@ The API will return three error types when requests fail:
 
 ### GET /api/questions
 * General:
-    * Returns a list of question objects, success value, and total number of questions
+    * Returns a list of question objects, success value, and total number of questions. Also returns the categories available and the current category of the user.
     * Results are paginated in groups of 10. Include a request argument to choose page number, starting from 1.
 * Sample: `curl http://127.0.0.1:5000/api/questions`
 
@@ -315,7 +327,7 @@ This endpoint either creates a new question or returns results based on the sear
 If no search term is included with the request body:
 * General:
     * Creates a new question using the submitted question, answer, difficulty, and category. Returns the ID of the created question, a success value, total questions, and the current list of questions based on the current page number in order to update the frontend.
-* Sample: `curl http://127.0.0.1:5000/api/questions -X POST -H "Content-Type: application/json" -d {'question': 'In what month is the Earth closest to the sun?', 'answer': 'January',' difficulty': 2, 'category': '3' }`
+* Sample: `curl http://127.0.0.1:5000/api/questions -X POST -H "Content-Type: application/json" -d '{'question': 'In what month is the Earth closest to the sun?', 'answer': 'January',' difficulty': 2, 'category': '3' }'`
 
 ```bash
 {
@@ -398,7 +410,7 @@ If no search term is included with the request body:
 ```
 If a search term is included with the request body:
 * General: 
-    * Returns JSON object with paginated questions containing search term, success value, and total number of questions matching search term.
+    * Returns a list of paginated questions objects that contain the search term, success value, and total number of questions matching search term.
 * Sample: `curl http://127.0.0.1:5000/api/questions -X POST -H "Content-Type: application/json" -d '{"searchTerm": "title"}'`
 
 ```bash
