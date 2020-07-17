@@ -139,13 +139,13 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['question']['id'], 22) # only 3 questions in this category (20, 21, 22)
         self.assertEqual(data['question']['category'], 1) # science
 
-    def test_400_if_quiz_fails(self):
+    def test_404_if_quiz_fails(self):
         res = self.client().post('/api/quizzes', json={})
         data = json.loads(res.data)
 
-        self.assertEqual(res.status_code, 400)
+        self.assertEqual(res.status_code, 404)
         self.assertEqual(data['success'], False)
-        self.assertEqual(data['message'], 'Bad request')
+        self.assertEqual(data['message'], 'Not found')
 
 # Make the tests conveniently executable
 if __name__ == "__main__":

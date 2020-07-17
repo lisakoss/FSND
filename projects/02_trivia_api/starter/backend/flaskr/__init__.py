@@ -173,7 +173,7 @@ def create_app(test_config=None):
 
     # abort if category or previous questions is not found
     if (quiz_category is None) or (previous_questions is None):
-      abort(400)
+      abort(404)
 
     # determine if the user wants to take a quiz with questions from all categories
     if quiz_category["type"] != "click":
