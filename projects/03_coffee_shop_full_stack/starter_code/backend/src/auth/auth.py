@@ -22,7 +22,7 @@ class AuthError(Exception):
 
 ## Auth Header
 def get_token_auth_header():
-    auth_header = request.headers['Authorization', None]
+    auth_header = request.headers.get('Authorization', None)
 
     if not auth_header:
         raise AuthError({'code': 'authorization_header_missing',
@@ -85,6 +85,7 @@ def verify_decode_jwt(token):
             )
             
             return payload
+
         except jwt.ExpiredSignatureError:
             raise AuthError({"code": "token_expired",
                             "description": "token is expired"}, 401)
