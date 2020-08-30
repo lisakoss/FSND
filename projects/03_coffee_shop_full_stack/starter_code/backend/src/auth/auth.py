@@ -73,6 +73,7 @@ def verify_decode_jwt(token):
                 "n": key["n"],
                 "e": key["e"]
             }
+            
     if rsa_key:
         try:
             payload = jwt.decode(
