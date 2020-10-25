@@ -113,9 +113,6 @@ def update_drink(payload, drink_id):
 
         drink = Drink.query.filter_by(id=drink_id).first_or_404()
 
-        if drink is None or title is None or recipe is None:
-            abort(404)
-
         drink.title = title
         drink.recipe = json.dumps(recipe)
         drink.update()
@@ -194,3 +191,10 @@ def not_found(error):
 @TODO implement error handler for AuthError
     error handler should conform to general task above 
 '''
+@app.errorhandler(AuthError)
+def auth_error(error):
+    return jsonify({
+        'success': False,
+        'error': error.status_code,
+        'message': error.error['code']
+    }), 401
