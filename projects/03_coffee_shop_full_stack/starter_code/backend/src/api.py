@@ -111,7 +111,7 @@ def update_drink(payload, drink_id):
         title = body.get('title')
         recipe = body.get('recipe')
 
-        drink = Drink.query.filter_by(id=drink_id).one_or_404()
+        drink = Drink.query.filter_by(id=drink_id).first_or_404()
 
         if drink is None or title is None or recipe is None:
             abort(404)
@@ -138,6 +138,21 @@ def update_drink(payload, drink_id):
     returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
         or appropriate status code indicating reason for failure
 '''
+
+@app.route('/drinks/<int:drink_id>', methods=['DELETE'])
+@requires_auth('delete:drinks')
+def delete_drink(payload, drink_id):
+    try:
+        drink = Drink.query.filter_by(id=drink_id).first_or_404()
+        drink.delete()
+
+        return jsonify({
+            'success': True,
+            'delete': drink_id
+        })
+
+    except:
+        abort(422)
 
 
 ## Error Handling
